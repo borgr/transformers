@@ -498,7 +498,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin):
                 raise EnvironmentError(msg)
 
             if resolved_archive_file == archive_file:
-                logger.info("loading weights file {}".format(archive_file))
+                logger.info("loading weights file {}".format(os.path.abspath(archive_file)))
             else:
                 logger.info("loading weights file {} from cache at {}".format(archive_file, resolved_archive_file))
         else:

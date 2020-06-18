@@ -385,7 +385,7 @@ class TFPreTrainedModel(tf.keras.Model, TFModelUtilsMixin):
                     )
                 raise e
             if resolved_archive_file == archive_file:
-                logger.info("loading weights file {}".format(archive_file))
+                logger.info("loading weights file {}".format(os.path.abspath(archive_file)))
             else:
                 logger.info("loading weights file {} from cache at {}".format(archive_file, resolved_archive_file))
         else:
