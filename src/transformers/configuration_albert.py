@@ -19,10 +19,10 @@ from .configuration_utils import PretrainedConfig
 
 
 ALBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "albert-base-v1": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-base-config.json",
-    "albert-large-v1": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-large-config.json",
-    "albert-xlarge-v1": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-xlarge-config.json",
-    "albert-xxlarge-v1": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-xxlarge-config.json",
+    "albert-base-v1": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-base-v1-config.json",
+    "albert-large-v1": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-large-v1-config.json",
+    "albert-xlarge-v1": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-xlarge-v1-config.json",
+    "albert-xxlarge-v1": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-xxlarge-v1-config.json",
     "albert-base-v2": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-base-v2-config.json",
     "albert-large-v2": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-large-v2-config.json",
     "albert-xlarge-v2": "https://s3.amazonaws.com/models.huggingface.co/bert/albert-xlarge-v2-config.json",
@@ -32,7 +32,7 @@ ALBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {
 
 class AlbertConfig(PretrainedConfig):
     r"""
-        This is the configuration class to store the configuration of an :class:`~transformers.AlbertModel`.
+        This is the configuration class to store the configuration of a :class:`~transformers.AlbertModel`.
         It is used to instantiate an ALBERT model according to the specified arguments, defining the model
         architecture. Instantiating a configuration with the defaults will yield a similar configuration to that of
         the ALBERT `xxlarge <https://huggingface.co/albert-xxlarge-v2>`__ architecture.
@@ -97,13 +97,8 @@ class AlbertConfig(PretrainedConfig):
 
             # Accessing the model configuration
             configuration = model.config
-
-        Attributes:
-            pretrained_config_archive_map (Dict[str, str]):
-                A dictionary containing all the available pre-trained checkpoints.
     """
 
-    pretrained_config_archive_map = ALBERT_PRETRAINED_CONFIG_ARCHIVE_MAP
     model_type = "albert"
 
     def __init__(
@@ -124,9 +119,12 @@ class AlbertConfig(PretrainedConfig):
         initializer_range=0.02,
         layer_norm_eps=1e-12,
         classifier_dropout_prob=0.1,
+        pad_token_id=0,
+        bos_token_id=2,
+        eos_token_id=3,
         **kwargs
     ):
-        super().__init__(**kwargs)
+        super().__init__(pad_token_id=pad_token_id, bos_token_id=bos_token_id, eos_token_id=eos_token_id, **kwargs)
 
         self.vocab_size = vocab_size
         self.embedding_size = embedding_size

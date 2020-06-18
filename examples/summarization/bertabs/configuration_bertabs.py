@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 BERTABS_FINETUNED_CONFIG_MAP = {
-    "bertabs-finetuned-cnndm": "https://s3.amazonaws.com/models.huggingface.co/bert/remi/bertabs-finetuned-cnndm-extractive-abstractive-summarization-config.json",
+    "bertabs-finetuned-cnndm": "https://s3.amazonaws.com/models.huggingface.co/bert/remi/bertabs-finetuned-cnndm-extractive-abstractive-summarization/config.json",
 }
 
 
@@ -61,7 +61,6 @@ class BertAbsConfig(PretrainedConfig):
             the decoder.
     """
 
-    pretrained_config_archive_map = BERTABS_FINETUNED_CONFIG_MAP
     model_type = "bertabs"
 
     def __init__(

@@ -110,13 +110,8 @@ class GPT2Config(PretrainedConfig):
 
             # Accessing the model configuration
             configuration = model.config
-
-        Attributes:
-            pretrained_config_archive_map (Dict[str, str]):
-                A dictionary containing all the available pre-trained checkpoints.
     """
 
-    pretrained_config_archive_map = GPT2_PRETRAINED_CONFIG_ARCHIVE_MAP
     model_type = "gpt2"
 
     def __init__(
@@ -142,7 +137,7 @@ class GPT2Config(PretrainedConfig):
         eos_token_id=50256,
         **kwargs
     ):
-        super().__init__(**kwargs)
+        super().__init__(bos_token_id=bos_token_id, eos_token_id=eos_token_id, **kwargs)
 
         self.vocab_size = vocab_size
         self.n_ctx = n_ctx
@@ -163,7 +158,7 @@ class GPT2Config(PretrainedConfig):
         self.summary_proj_to_labels = summary_proj_to_labels
 
         self.bos_token_id = bos_token_id
-        self.eos_token_ids = [eos_token_id]
+        self.eos_token_id = eos_token_id
 
     @property
     def max_position_embeddings(self):
