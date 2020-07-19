@@ -61,6 +61,7 @@ from transformers import (
     RobertaForMaskedLM,
     RobertaTokenizer,
     get_linear_schedule_with_warmup, GPT2TokenizerFast,
+    TransfoXLConfig, TransfoXLLMHeadModel, TransfoXLTokenizerFast
 )
 
 try:
@@ -77,6 +78,7 @@ MODEL_CLASSES = {
     "roberta": (RobertaConfig, RobertaForMaskedLM, RobertaTokenizer),
     "distilbert": (DistilBertConfig, DistilBertForMaskedLM, DistilBertTokenizer),
     "camembert": (CamembertConfig, CamembertForMaskedLM, CamembertTokenizer),
+    "transformerXL": (TransfoXLConfig, TransfoXLLMHeadModel, TransfoXLTokenizerFast)
 }
 
 
@@ -214,6 +216,9 @@ def load_tokenizer(args, block_size):
         tokenizer = BertWordPieceTokenizer(os.path.join(args.tokenizer_name, "vocab.txt"),
                                            handle_chinese_chars=False, lowercase=False)
         tokenizer.enable_truncation(block_size)
+    elif "XL" in bert_tokenizer:
+        logger.info("Loading pretrained XL tokenizer")
+        tokenizer = TransfoXLTokenizerFast()#.from_pretrained('transfo-xl-wt103')
     else:
         from tokenizers import ByteLevelBPETokenizer
         from tokenizers.processors import BertProcessing
@@ -402,9 +407,9 @@ def mask_tokens(inputs: torch.Tensor, tokenizer: PreTrainedTokenizer, args) -> T
 
 def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedTokenizer) -> Tuple[int, float]:
     """ Train the model """
+    non_wrapped_model = model
     if args.local_rank in [-1, 0]:
         tb_writer = SummaryWriter()
-
     if args.eval_blimp or args.blimp_dir:
         if not (args.eval_blimp and args.blimp_dir):
             raise ValueError(
@@ -412,8 +417,6 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
 
     def collate(examples: List[torch.Tensor]):
-        # logger.info(f"examples in collate: {examples}")
-        # logger.info(f"example shapes in collate: {len(examples)} {[example.shape for example in examples]}")
         if tokenizer._pad_token is None:
             return pad_sequence(examples, batch_first=True)
         return pad_sequence(examples, batch_first=True, padding_value=tokenizer.pad_token_id)
@@ -465,6 +468,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
             raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
         model, optimizer = amp.initialize(model, optimizer, opt_level=args.fp16_opt_level)
 
+
     # multi-gpu training (should be after apex fp16 initialization)
     if args.n_gpu > 1 and not isinstance(model, torch.nn.DataParallel):
         model = torch.nn.DataParallel(model)
@@ -485,7 +489,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
         args.train_batch_size
         * args.gradient_accumulation_steps
         * (torch.distributed.get_world_size() if args.local_rank != -1 else 1),
-    )
+        )
     logger.info("  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
     logger.info("  Total optimization steps = %d", t_total)
 
@@ -569,6 +573,17 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                             args.local_rank == -1 and args.evaluate_during_training
                     ):  # Only evaluate when single GPU otherwise metrics may not average well
                         results = evaluate(args, model, tokenizer)
+                        gen_tokenizer = load_tokenizer(args, args.block_size)
+                        starting_sents = [".", "The", "The boy did", "Little did he know"]
+                        for starting_sent in starting_sents:
+                            input = gen_tokenizer.encode_batch([starting_sent])
+                            input = torch.tensor([inp.ids for inp in input], dtype=torch.long)
+                            input = input.to(args.device)
+                            sent = non_wrapped_model.generate(input, max_length=20)
+                            sent = sent.tolist()
+                            sent = gen_tokenizer.decode_batch(sent)
+                            logger.info(f"Random sentence starthing with {starting_sent}: {sent}")
+
                         if args.eval_blimp or args.blimp_dir:
                             evaluate_blimp(args, model, tokenizer, global_step, results["perplexity"])
                         for key, value in results.items():
